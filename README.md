@@ -1,7 +1,8 @@
 # Gin - Vue - Product 
 
 ## 1. Project Introduction
-    The order query project based on vue and gin, which separates the front and rear of the full stack. The project provides the function of search form and filter form, and can display the information related to the amount.
+    
+   - The order query project based on vue and gin, which separates the front and rear of the full stack. The project provides the function of search orders and filter orders, and can display the information related to the amount.
 
 ## 2. How to run
 
@@ -15,9 +16,11 @@
 
     ```bash
     # clone the project
-    git clone https://github.com/jingyuan-git/TestTask.git
+    git clone https://github.com/jingyuan-git/order-query.git
 
     # create an order database in PostgreSQL
+    # and than will write database-related information into the configuration
+    # in `server/conf/app.ini`
     ``` 
 
 ### 2.1 server project
@@ -32,7 +35,7 @@
     RunMode = debug
     ; Host = localhost
     HttpPort = 8000
-
+    ...
 
     [database]
     Type = postgres
@@ -87,6 +90,7 @@
 
 - Project setup
     ```
+    cd web-v2
     yarn install
     ```
 
@@ -107,3 +111,7 @@
 
 - Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+# 3. Project Display
+
+![image](https://raw.githubusercontent.com/jingyuan-git/order-query/2a36e00c31dcdbe18a55ea4308049e924a105a0e/data/DisplayInterface.png)
