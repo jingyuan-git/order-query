@@ -15,15 +15,6 @@ type Order struct {
 	OrderItem  []OrderItem `gorm:"foreignKey:OrderId;references:ID"`
 }
 
-type OrderDto struct {
-	OrderName       string    `json:"orderName,omitempty"`
-	CompanyName     string    `json:"companyName,omitempty"`
-	CustomerName    string    `json:"customerName,omitempty"`
-	OrderData       time.Time `json:"orderData,omitempty"`
-	DeliveredAmount int       `json:"deliveredAmount,omitempty"`
-	TotalAmount     int       `json:"totalAmount,omitempty"`
-}
-
 func dbSearchOrder(db *gorm.DB, keyWord string, pagingCconstraints bool, pageNum int, pageSize int) *gorm.DB {
 	db.Preload("Customer").Preload("Customer.CustomerCompany").Preload("OrderItem").Preload("OrderItem.Delivery")
 	db.Joins("JOIN customers on customers.id = orders.customer_id")
@@ -55,7 +46,7 @@ func dbListAllOrders(db *gorm.DB, pagingCconstraints bool, pageNum int, pageSize
 }
 
 // GetOrdersTotal gets the total number of orders based on the constraints
-func GetOrdersTotal(maps map[string]interface{}) (int, int, error) {
+func GetOrdersTotal(maps map[string]interface{}) ([]*Order, error) {
 	var (
 		orders []*Order
 	)
@@ -65,7 +56,7 @@ func GetOrdersTotal(maps map[string]interface{}) (int, int, error) {
 		db = dbSearchOrder(db, v.(string), false, 0, 0)
 		err := db.Find(&orders).Error
 		if err != nil && err != gorm.ErrRecordNotFound {
-			return 0, 0, err
+			return nil, err
 		}
 	} else {
 		startDate, ok1 := maps["startOrderDate"]
@@ -75,32 +66,22 @@ func GetOrdersTotal(maps map[string]interface{}) (int, int, error) {
 			db = dbFilterOrderDate(db, startDate.(string), endDate.(string), false, 0, 0)
 			err := db.Find(&orders).Error
 			if err != nil && err != gorm.ErrRecordNotFound {
-				return 0, 0, err
+				return nil, err
 			}
 		} else {
 			db := db.Model(orders)
 			db = dbListAllOrders(db, false, 0, 0)
 			err := db.Find(&orders).Error
 			if err != nil && err != gorm.ErrRecordNotFound {
-				return 0, 0, err
+				return nil, err
 			}
 		}
 	}
-	return orderTotalResp(orders)
-}
-
-func orderTotalResp(orders []*Order) (int, int, error) {
-	var totalAmount int
-	for _, v := range orders {
-		for _, orderItem := range v.OrderItem {
-			totalAmount += orderItem.PricePerUnit * orderItem.Quantity
-		}
-	}
-	return len(orders), totalAmount, nil
+	return orders, nil
 }
 
 // GetOrders gets a list of orders based on paging constraints
-func GetOrders(pageNum int, pageSize int, maps map[string]interface{}) ([]*OrderDto, error) {
+func GetOrders(pageNum int, pageSize int, maps map[string]interface{}) ([]*Order, error) {
 	var (
 		orders []*Order
 	)
@@ -133,30 +114,5 @@ func GetOrders(pageNum int, pageSize int, maps map[string]interface{}) ([]*Order
 			}
 		}
 	}
-	return orderListResp(orders)
-}
-
-func orderListResp(orders []*Order) ([]*OrderDto, error) {
-	var orderDtos []*OrderDto
-	for _, v := range orders {
-		var totalAmount, deliveredAmount int
-		for _, orderItem := range v.OrderItem {
-			var deliveredQuantity int
-			totalAmount += orderItem.PricePerUnit * orderItem.Quantity
-			for _, orderDeliveredQuantity := range orderItem.Delivery {
-				deliveredQuantity += orderDeliveredQuantity.DeliveredQuantity
-			}
-			deliveredAmount += orderItem.PricePerUnit * deliveredQuantity
-		}
-		orderDto := OrderDto{
-			OrderName:       v.OrderName,
-			CompanyName:     v.Customer.CustomerCompany.CompanyName,
-			CustomerName:    v.Customer.Name,
-			OrderData:       v.CreatedAt,
-			DeliveredAmount: deliveredAmount,
-			TotalAmount:     totalAmount,
-		}
-		orderDtos = append(orderDtos, &orderDto)
-	}
-	return orderDtos, nil
+	return orders, nil
 }
