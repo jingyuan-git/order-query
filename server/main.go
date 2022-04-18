@@ -39,5 +39,7 @@ func main() {
 
 	log.Printf("[info] start http server listening %s", addrUrl)
 
-	server.ListenAndServe()
+	if err := server.ListenAndServe(); err != nil {
+		log.Printf("[error] fail to listen http server %s", err)
+	}
 }
