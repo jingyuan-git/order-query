@@ -153,9 +153,9 @@ export default {
           class: "text-right options-column"
         },
         {
-          key: "orderData",
+          key: "orderDate",
           sortable: true,
-          label: "Order Data",
+          label: "Order Date",
           class: "text-right options-column"
         },
         {
