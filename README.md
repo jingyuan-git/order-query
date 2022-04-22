@@ -12,6 +12,7 @@
    - gin
    - vue
    - IDE recommendation: VSCode
+   - golang version >= 1.18
   
 
     ```bash
