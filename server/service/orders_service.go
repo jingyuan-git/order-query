@@ -21,7 +21,7 @@ type OrderDto struct {
 	OrderName       string    `json:"orderName,omitempty"`
 	CompanyName     string    `json:"companyName,omitempty"`
 	CustomerName    string    `json:"customerName,omitempty"`
-	OrderData       time.Time `json:"orderData,omitempty"`
+	OrderDate       time.Time `json:"orderDate,omitempty"`
 	DeliveredAmount int       `json:"deliveredAmount,omitempty"`
 	TotalAmount     int       `json:"totalAmount,omitempty"`
 }
@@ -52,7 +52,7 @@ func orderListResp(orders []*models.Order) []*OrderDto {
 			OrderName:       v.OrderName,
 			CompanyName:     v.Customer.CustomerCompany.CompanyName,
 			CustomerName:    v.Customer.Name,
-			OrderData:       v.CreatedAt,
+			OrderDate:       v.CreatedAt,
 			DeliveredAmount: deliveredAmount,
 			TotalAmount:     totalAmount,
 		}
