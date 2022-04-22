@@ -58,89 +58,46 @@ func Setup() {
 		[]CustomerCompany{},
 	)
 
-	orders := csvOutput(setting.DatabaseSetting.DataPath+"orders.csv", "Order").([]Order)
-	orderItems := csvOutput(setting.DatabaseSetting.DataPath+"order_items.csv", "OrderItem").([]OrderItem)
-	deliveries := csvOutput(setting.DatabaseSetting.DataPath+"deliveries.csv", "Delivery").([]Delivery)
-	customers := csvOutput(setting.DatabaseSetting.DataPath+"customers.csv", "Customer").([]Customer)
-	customerCompanies := csvOutput(setting.DatabaseSetting.DataPath+"customer_companies.csv", "CustomerCompany").([]CustomerCompany)
+	if err := importDB(setting.DatabaseSetting.DataPath+"orders.csv", []Order{}); err != nil {
+		log.Default().Panicln("the orders databases are failed to import")
+	}
 
-	result := db.Create(&customerCompanies)
-	if result.Error != nil {
-		panic(result.Error)
+	if err := importDB(setting.DatabaseSetting.DataPath+"order_items.csv", []OrderItem{}); err != nil {
+		log.Default().Panicln("the order_items databases are failed to import")
 	}
-	result = db.Create(&customers)
-	if result.Error != nil {
-		panic(result.Error)
+
+	if err := importDB(setting.DatabaseSetting.DataPath+"deliveries.csv", []Delivery{}); err != nil {
+		log.Default().Panicln("the deliveries databases are failed to import")
 	}
-	result = db.Create(&orders)
-	if result.Error != nil {
-		panic(result.Error)
+
+	if err := importDB(setting.DatabaseSetting.DataPath+"customers.csv", []Customer{}); err != nil {
+		log.Default().Panicln("the customers are failed to import")
 	}
-	result = db.Create(&orderItems)
-	if result.Error != nil {
-		panic(result.Error)
-	}
-	result = db.Create(&deliveries)
-	if result.Error != nil {
-		panic(result.Error)
+
+	if err := importDB(setting.DatabaseSetting.DataPath+"customer_companies.csv", []CustomerCompany{}); err != nil {
+		log.Default().Panicln("the customer_companies are failed to import")
 	}
 
 	log.Default().Printf("the databases are successfully loaded")
 }
 
-func csvOutput(path string, structType string) interface{} {
+// importDB parses the CSV from the file in the interface s
+// and insert the value into database.
+func importDB[V any](path string, s V) error {
 	file, err := os.Open(path)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer file.Close()
+	
+	err = gocsv.Unmarshal(file, &s)
+	if err != nil {
+		return err
+	}
 
-	switch structType {
-	case "Order":
-		{
-			var orders []Order
-			err = gocsv.Unmarshal(file, &orders)
-			if err != nil {
-				panic(err)
-			}
-			return orders
-		}
-	case "OrderItem":
-		{
-			var orderItems []OrderItem
-			err = gocsv.Unmarshal(file, &orderItems)
-			if err != nil {
-				panic(err)
-			}
-			return orderItems
-		}
-	case "Customer":
-		{
-			var customers []Customer
-			err = gocsv.Unmarshal(file, &customers)
-			if err != nil {
-				panic(err)
-			}
-			return customers
-		}
-	case "Delivery":
-		{
-			var deliveries []Delivery
-			err = gocsv.Unmarshal(file, &deliveries)
-			if err != nil {
-				panic(err)
-			}
-			return deliveries
-		}
-	case "CustomerCompany":
-		{
-			var customerCompanies []CustomerCompany
-			err = gocsv.Unmarshal(file, &customerCompanies)
-			if err != nil {
-				panic(err)
-			}
-			return customerCompanies
-		}
+	result := db.Create(s)
+	if result.Error != nil {
+		return result.Error
 	}
 	return nil
 }
