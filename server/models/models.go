@@ -58,30 +58,36 @@ func Setup() {
 		[]CustomerCompany{},
 	)
 
-	if err := importDB(setting.DatabaseSetting.DataPath+"orders.csv", []Order{}); err != nil {
-		log.Default().Panicln("the orders databases are failed to import")
-	}
+	errs := make(chan error, 1)
 
-	if err := importDB(setting.DatabaseSetting.DataPath+"order_items.csv", []OrderItem{}); err != nil {
-		log.Default().Panicln("the order_items databases are failed to import")
-	}
+	go func() {
+		errs <- importDB(setting.DatabaseSetting.DataPath+"orders.csv", []Order{})
+	}()
 
-	if err := importDB(setting.DatabaseSetting.DataPath+"deliveries.csv", []Delivery{}); err != nil {
-		log.Default().Panicln("the deliveries databases are failed to import")
-	}
+	go func() {
+		errs <- importDB(setting.DatabaseSetting.DataPath+"order_items.csv", []OrderItem{})
+	}()
 
-	if err := importDB(setting.DatabaseSetting.DataPath+"customers.csv", []Customer{}); err != nil {
-		log.Default().Panicln("the customers are failed to import")
-	}
+	go func() {
+		errs <- importDB(setting.DatabaseSetting.DataPath+"deliveries.csv", []Delivery{})
+	}()
 
-	if err := importDB(setting.DatabaseSetting.DataPath+"customer_companies.csv", []CustomerCompany{}); err != nil {
-		log.Default().Panicln("the customer_companies are failed to import")
+	go func() {
+		errs <- importDB(setting.DatabaseSetting.DataPath+"customers.csv", []Customer{})
+	}()
+
+	go func() {
+		errs <- importDB(setting.DatabaseSetting.DataPath+"customer_companies.csv", []CustomerCompany{})
+	}()
+
+	if err := <-errs; err != nil {
+		log.Default().Panicf("the database is failed to import. Error: %+v", err)
 	}
 
 	log.Default().Printf("the databases are successfully loaded")
 }
 
-// importDB parses the CSV from the file in the interface s
+// importDB parses the CSV from the file in the interface
 // and insert the value into database.
 func importDB[V any](path string, s V) error {
 	file, err := os.Open(path)
@@ -89,7 +95,7 @@ func importDB[V any](path string, s V) error {
 		return err
 	}
 	defer file.Close()
-	
+
 	err = gocsv.Unmarshal(file, &s)
 	if err != nil {
 		return err
