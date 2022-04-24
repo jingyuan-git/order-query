@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sync"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocarina/gocsv"
@@ -59,29 +60,42 @@ func Setup() {
 	)
 
 	errs := make(chan error, 1)
+	wgDone := make(chan bool)
 
+	var wg sync.WaitGroup
+	wg.Add(5)
 	go func() {
 		errs <- importDB(setting.DatabaseSetting.DataPath+"orders.csv", []Order{})
+		wg.Done()
 	}()
-
 	go func() {
 		errs <- importDB(setting.DatabaseSetting.DataPath+"order_items.csv", []OrderItem{})
+		wg.Done()
 	}()
-
 	go func() {
 		errs <- importDB(setting.DatabaseSetting.DataPath+"deliveries.csv", []Delivery{})
+		wg.Done()
 	}()
-
 	go func() {
 		errs <- importDB(setting.DatabaseSetting.DataPath+"customers.csv", []Customer{})
+		wg.Done()
 	}()
-
 	go func() {
 		errs <- importDB(setting.DatabaseSetting.DataPath+"customer_companies.csv", []CustomerCompany{})
+		wg.Done()
+	}()
+	go func() {
+		wg.Wait()
+		close(wgDone)
 	}()
 
-	if err := <-errs; err != nil {
-		log.Default().Panicf("the database is failed to import. Error: %+v", err)
+	select {
+	case <-wgDone:
+		break
+	case err := <-errs:
+		if err != nil {
+			log.Default().Panicf("[error] the database is failed to import. Error: %+v", err)
+		}
 	}
 
 	log.Default().Printf("the databases are successfully loaded")
